@@ -1,0 +1,62 @@
+#Makefile del TRANSMISOR - EL-3307 Proyecto corto I
+#Uso:  make -f Makefile.transmisor            (sintetiza, hace pnr, genera y carga el bitstream)
+#      make -f Makefile.transmisor test       (corre el testbench del sistema completo)
+#      make -f Makefile.transmisor wv         (abre la forma de onda en GTKWave)
+
+BOARD  = tangnano9k
+FAMILY = GW1N-9C
+DEVICE = GW1NR-LV9QN88PC6/I5
+
+PROYECT = transmisor
+
+#Fuentes del transmisor: SOLO las que participan en esta tarjeta
+SOURCES = ../design/top_transmisor.sv \
+          ../design/module_generador_error.sv \
+          ../design/module_bin_a_7seg.sv
+
+#Testbench del sistema completo (necesita también las fuentes del receptor
+#y los modelos de simulación de los circuitos físicos)
+TESTBENCH  = ../sim/tb_sistema_completo.sv
+SIM_EXTRAS = ../sim/modelo_hamming_verificacion.sv \
+             ../sim/modelo_receptor_fisico.sv \
+             ../design/top_receptor.sv \
+             ../design/module_corrector.sv \
+             ../design/module_display_7seg.sv
+
+CONSTRAINTS = ../constr/transmisor.cst
+
+TOP_DESIGN = top_transmisor
+TOP_TB     = tb_sistema_completo
+
+VCD_FILE = sistema_completo_tb.vcd
+
+
+all: synth pnr bitstream load
+
+synth: ${SOURCES}
+	@echo "Ejecutando la sintesis del transmisor..."
+	@yosys -p "read_verilog -sv ${SOURCES}; synth_gowin -top ${TOP_DESIGN} -json ${PROYECT}.json" > synthesis_${BOARD}.log 2>&1
+	@echo "COMPLETADO"
+
+pnr: ${PROYECT}.json
+	@echo "Ejecutando el pnr..."
+	@nextpnr-gowin --json ${PROYECT}.json --write ${PROYECT}_pnr.json --freq 27 --device ${DEVICE} --family ${FAMILY} --cst ${CONSTRAINTS} > pnr_${BOARD}.log 2>&1
+	@echo "COMPLETADO"
+
+bitstream: ${PROYECT}_pnr.json
+	@echo "Generando ${PROYECT}_${BOARD}.fs"
+	@gowin_pack -d ${FAMILY} -o ${PROYECT}_${BOARD}.fs ${PROYECT}_pnr.json
+	@echo "COMPLETADO"
+
+test:
+	@iverilog -g2012 -o ${PROYECT}_test.o -s ${TOP_TB} ${TESTBENCH} ${SOURCES} ${SIM_EXTRAS}
+	@vvp ${PROYECT}_test.o
+
+wv: ${VCD_FILE}
+	gtkwave ${VCD_FILE}
+
+load: ${PROYECT}_${BOARD}.fs
+	openFPGALoader -b ${BOARD} ${PROYECT}_${BOARD}.fs
+
+.PHONY: load wv test
+.INTERMEDIATE: ${PROYECT}_pnr.json ${PROYECT}.json

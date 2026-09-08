@@ -1,0 +1,117 @@
+// ============================================================================
+// CONSTRAINTS DEL TRANSMISOR  --  Tang Nano 9K (GW1NR-LV9QN88PC6/I5)
+// EL-3307 Proyecto corto I   ·   top: top_transmisor
+//
+// Todos los pines usados están en bancos de 3.3 V y salen a los headers J5/J6.
+// La columna "J5-n / J6-n" indica la POSICIÓN FÍSICA en la tira de pines,
+// contando desde el extremo del conector marcado con el 1 en el esquemático.
+//
+// ALIMENTACIÓN DE LA PROTOBOARD:  J6-24 = +3V3   ·   J6-23 = GND
+// Los 74HC86 se alimentan a 3.3 V (NO a 5 V) para que sus niveles sean
+// compatibles con las entradas de la FPGA.
+// ============================================================================
+
+// ---------------------------------------------------------------------------
+// ENTRADAS: palabra Hamming (7,4) que llega del codificador físico 74HC86
+// ham_i[k] = posición k+1 de la palabra
+// ---------------------------------------------------------------------------
+IO_LOC  "ham_i[0]" 38;                                              // J5-1  · posición 1 = p1
+IO_PORT "ham_i[0]" IO_TYPE=LVCMOS33 PULL_MODE=DOWN;
+
+IO_LOC  "ham_i[1]" 37;                                              // J5-2  · posición 2 = p2
+IO_PORT "ham_i[1]" IO_TYPE=LVCMOS33 PULL_MODE=DOWN;
+
+IO_LOC  "ham_i[2]" 36;                                              // J5-3  · posición 3 = d1
+IO_PORT "ham_i[2]" IO_TYPE=LVCMOS33 PULL_MODE=DOWN;
+
+IO_LOC  "ham_i[3]" 39;                                              // J5-4  · posición 4 = p4
+IO_PORT "ham_i[3]" IO_TYPE=LVCMOS33 PULL_MODE=DOWN;
+
+IO_LOC  "ham_i[4]" 40;                                              // J5-13 · posición 5 = d2
+IO_PORT "ham_i[4]" IO_TYPE=LVCMOS33 PULL_MODE=DOWN;
+
+IO_LOC  "ham_i[5]" 35;                                              // J5-14 · posición 6 = d3
+IO_PORT "ham_i[5]" IO_TYPE=LVCMOS33 PULL_MODE=DOWN;
+
+IO_LOC  "ham_i[6]" 57;                                              // J5-22 · posición 7 = d4
+IO_PORT "ham_i[6]" IO_TYPE=LVCMOS33 PULL_MODE=DOWN;
+
+// Bit 8: paridad DED que llega del segundo bloque físico
+IO_LOC  "ded_i" 63;                                                 // J6-1  · posición 8 = p0
+IO_PORT "ded_i" IO_TYPE=LVCMOS33 PULL_MODE=DOWN;
+
+// ---------------------------------------------------------------------------
+// ENTRADAS: conmutadores de posición de error (0 = sin error, 1..7 = posición)
+// ---------------------------------------------------------------------------
+IO_LOC  "err1_i[0]" 77;                                             // J6-10
+IO_PORT "err1_i[0]" IO_TYPE=LVCMOS33 PULL_MODE=DOWN;
+
+IO_LOC  "err1_i[1]" 76;                                             // J6-11
+IO_PORT "err1_i[1]" IO_TYPE=LVCMOS33 PULL_MODE=DOWN;
+
+IO_LOC  "err1_i[2]" 48;                                             // J6-19
+IO_PORT "err1_i[2]" IO_TYPE=LVCMOS33 PULL_MODE=DOWN;
+
+IO_LOC  "err2_i[0]" 49;                                             // J6-20
+IO_PORT "err2_i[0]" IO_TYPE=LVCMOS33 PULL_MODE=DOWN;
+
+IO_LOC  "err2_i[1]" 31;                                             // J6-21
+IO_PORT "err2_i[1]" IO_TYPE=LVCMOS33 PULL_MODE=DOWN;
+
+IO_LOC  "err2_i[2]" 32;                                             // J6-22
+IO_PORT "err2_i[2]" IO_TYPE=LVCMOS33 PULL_MODE=DOWN;
+
+// ---------------------------------------------------------------------------
+// SALIDAS: enlace de 8 líneas hacia la FPGA del receptor
+// Usan las MISMAS posiciones de header que las entradas rx_i del receptor,
+// así el cable va derecho J5-5..J5-12  ->  J5-5..J5-12
+// No olvide unir las dos tierras (J6-23 de una tarjeta con J6-23 de la otra).
+// ---------------------------------------------------------------------------
+IO_LOC  "tx_o[0]" 25;                                               // J5-5  · posición 1
+IO_PORT "tx_o[0]" IO_TYPE=LVCMOS33 DRIVE=8;
+
+IO_LOC  "tx_o[1]" 26;                                               // J5-6  · posición 2
+IO_PORT "tx_o[1]" IO_TYPE=LVCMOS33 DRIVE=8;
+
+IO_LOC  "tx_o[2]" 27;                                               // J5-7  · posición 3
+IO_PORT "tx_o[2]" IO_TYPE=LVCMOS33 DRIVE=8;
+
+IO_LOC  "tx_o[3]" 28;                                               // J5-8  · posición 4
+IO_PORT "tx_o[3]" IO_TYPE=LVCMOS33 DRIVE=8;
+
+IO_LOC  "tx_o[4]" 29;                                               // J5-9  · posición 5
+IO_PORT "tx_o[4]" IO_TYPE=LVCMOS33 DRIVE=8;
+
+IO_LOC  "tx_o[5]" 30;                                               // J5-10 · posición 6
+IO_PORT "tx_o[5]" IO_TYPE=LVCMOS33 DRIVE=8;
+
+IO_LOC  "tx_o[6]" 33;                                               // J5-11 · posición 7
+IO_PORT "tx_o[6]" IO_TYPE=LVCMOS33 DRIVE=8;
+
+IO_LOC  "tx_o[7]" 34;                                               // J5-12 · posición 8 (DED)
+IO_PORT "tx_o[7]" IO_TYPE=LVCMOS33 DRIVE=8;
+
+// ---------------------------------------------------------------------------
+// SALIDAS: display de 7 segmentos de ánodo común (activo en bajo)
+// El ánodo va directo a +3V3; cada cátodo lleva su resistencia de 330 ohm.
+// ---------------------------------------------------------------------------
+IO_LOC  "catodo_o[0]" 41;                                           // J5-15 · segmento a
+IO_PORT "catodo_o[0]" IO_TYPE=LVCMOS33 DRIVE=8;
+
+IO_LOC  "catodo_o[1]" 42;                                           // J5-16 · segmento b
+IO_PORT "catodo_o[1]" IO_TYPE=LVCMOS33 DRIVE=8;
+
+IO_LOC  "catodo_o[2]" 51;                                           // J5-17 · segmento c
+IO_PORT "catodo_o[2]" IO_TYPE=LVCMOS33 DRIVE=8;
+
+IO_LOC  "catodo_o[3]" 53;                                           // J5-18 · segmento d
+IO_PORT "catodo_o[3]" IO_TYPE=LVCMOS33 DRIVE=8;
+
+IO_LOC  "catodo_o[4]" 54;                                           // J5-19 · segmento e
+IO_PORT "catodo_o[4]" IO_TYPE=LVCMOS33 DRIVE=8;
+
+IO_LOC  "catodo_o[5]" 55;                                           // J5-20 · segmento f
+IO_PORT "catodo_o[5]" IO_TYPE=LVCMOS33 DRIVE=8;
+
+IO_LOC  "catodo_o[6]" 56;                                           // J5-21 · segmento g
+IO_PORT "catodo_o[6]" IO_TYPE=LVCMOS33 DRIVE=8;
