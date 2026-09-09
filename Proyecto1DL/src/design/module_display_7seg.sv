@@ -1,6 +1,6 @@
 // ============================================================================
-// Módulo 7.4 - Despliegue en los dos displays de 7 segmentos del receptor
-// EL-3307 Diseño Lógico - Proyecto corto I  --  va DENTRO de la FPGA
+// Módulo 7.4
+//
 //
 // Los dos displays comparten los mismos 7 cátodos (a..g). Un conmutador
 // (disp_mode_i) decide cuál de los dos transistores PNP se enciende y, al

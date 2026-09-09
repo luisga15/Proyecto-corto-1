@@ -14,7 +14,6 @@
 //   p_total = 1 y síndrome = 0  -> el error cayó en el propio bit DED: los datos están bien
 //   p_total = 0 y síndrome != 0 -> DOS errores: se detecta (DED) pero NO se puede corregir
 //
-// Toda la lógica está escrita con ecuaciones de Boole (sin case/casez).
 // ============================================================================
 
 module module_corrector (
