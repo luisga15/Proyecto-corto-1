@@ -1,0 +1,255 @@
+// ============================================================================
+// CONSTRAINTS UNIFICADOS  --  Tang Nano 9K (GW1NR-LV9QN88PC6/I5)
+// EL-3307 Diseno Logico, Proyecto corto I   ·   top: top_hamming
+//
+// Un solo archivo y un solo bitstream para LAS DOS tarjetas. El pin de modo
+// (modo_i, J6-19) decide si esa tarjeta es transmisor o receptor.
+//
+// ---------------------------------------------------------------------------
+// ALIMENTACION
+//   J6-24 = +3V3   ·   J6-23 = GND
+//   Los 74HC86 se alimentan a 3.3 V (NUNCA a 5 V) para que sus niveles sean
+//   compatibles con las entradas de la FPGA.
+//   Las dos tarjetas DEBEN compartir GND (J6-23 de una con J6-23 de la otra).
+//
+// ---------------------------------------------------------------------------
+// BANCOS DE VOLTAJE  (segun el pinout oficial de Sipeed)
+//   BANK1 a 3.3 V, pines IOR : 51 53 54 55 56 57 63 48 49
+//   BANK2 a 3.3 V, pines IOB : 38 37 36 39 25 26 27 28 29 30 33 34 40 35 41 42 31 32
+//   BANK3 a 1.8 V, pines IOT : 85 84 83 82 81 80 79 77 76  (mas 86, 70..75)
+//
+//   OJO: los pines 77 y 76 (J6-10 y J6-11) son IOT37A/IOT37B, o sea BANK3 a
+//   1.8 V, NO 3.3 V. Es facil confundirse porque estan en medio del header
+//   junto a pines que si son de 3.3 V.
+//
+// PRESUPUESTO DE PINES
+//   Banco de 3.3 V (27 disponibles en J5/J6):  26 usados, 1 libre (32)
+//   Banco de 1.8 V (9 usables en J6-3..J6-11):  6 usados, 3 libres (79, 77, 76)
+//   En la tarjeta: botones 3 y 4, LEDs 10,11,13,14,15,16
+//
+// No se usan: 52 (reloj), 59..62 (flash), 68..75 (HDMI), 86 (backlight).
+// Los pines 36..39 se comparten con la ranura microSD: funcionan mientras no
+// haya tarjeta insertada.
+//
+// CUIDADO CON J6-18: ese pin del header es de 5 V y esta pegado a J6-19, que
+// es el selector de modo. Si el jumper se corre una posicion, le mete 5 V a un
+// pin de 3.3 V de la FPGA y lo dana.
+// ============================================================================
+
+
+// ===========================================================================
+// SELECCION DE MODO
+// Jumper de J6-19 a GND  -> modo_i = 0 -> TRANSMISOR
+// Sin jumper             -> el pull-up interno lo deja en 1 -> RECEPTOR
+//
+// El valor por defecto es RECEPTOR a proposito: asi las 8 lineas del enlace
+// arrancan en alta impedancia y dos tarjetas sin configurar nunca se pelean
+// el bus.
+// ===========================================================================
+IO_LOC  "modo_i" 48;                                                // J6-19
+IO_PORT "modo_i" IO_TYPE=LVCMOS33 PULL_MODE=UP;
+
+
+// ===========================================================================
+// BUS FISICO COMPARTIDO CON LA PROTOBOARD (74HC86, 3.3 V)
+// El significado de cada pin depende del modo. Son los MISMOS pines que
+// usaban transmisor.cst y receptor.cst por separado, asi que ninguna de las
+// dos protoboards se vuelve a alambrar.
+//
+//   pin          modo TRANSMISOR           modo RECEPTOR
+//   ----------   -----------------------   ------------------------
+//   fis_i[0] 38  posicion 1 = p1  (5.1)    sindrome s1  (7.2)
+//   fis_i[1] 37  posicion 2 = p2  (5.1)    sindrome s2  (7.2)
+//   fis_i[2] 36  posicion 3 = d1  (5.1)    sindrome s4  (7.2)
+//   fis_i[3] 39  posicion 4 = p4  (5.1)    paridad total (7.1)
+//   fis_i[4] 40  posicion 5 = d2  (5.1)    sin usar
+//   fis_i[5] 35  posicion 6 = d3  (5.1)    sin usar
+//   fis_i[6] 57  posicion 7 = d4  (5.1)    sin usar
+//   fis_i[7] 63  posicion 8 = p0  (5.2)    sin usar
+// ===========================================================================
+IO_LOC  "fis_i[0]" 38;                                              // J5-1
+IO_PORT "fis_i[0]" IO_TYPE=LVCMOS33 PULL_MODE=DOWN;
+
+IO_LOC  "fis_i[1]" 37;                                              // J5-2
+IO_PORT "fis_i[1]" IO_TYPE=LVCMOS33 PULL_MODE=DOWN;
+
+IO_LOC  "fis_i[2]" 36;                                              // J5-3
+IO_PORT "fis_i[2]" IO_TYPE=LVCMOS33 PULL_MODE=DOWN;
+
+IO_LOC  "fis_i[3]" 39;                                              // J5-4
+IO_PORT "fis_i[3]" IO_TYPE=LVCMOS33 PULL_MODE=DOWN;
+
+IO_LOC  "fis_i[4]" 40;                                              // J5-13
+IO_PORT "fis_i[4]" IO_TYPE=LVCMOS33 PULL_MODE=DOWN;
+
+IO_LOC  "fis_i[5]" 35;                                              // J5-14
+IO_PORT "fis_i[5]" IO_TYPE=LVCMOS33 PULL_MODE=DOWN;
+
+IO_LOC  "fis_i[6]" 57;                                              // J5-22
+IO_PORT "fis_i[6]" IO_TYPE=LVCMOS33 PULL_MODE=DOWN;
+
+IO_LOC  "fis_i[7]" 63;                                              // J6-1
+IO_PORT "fis_i[7]" IO_TYPE=LVCMOS33 PULL_MODE=DOWN;
+
+
+// ===========================================================================
+// ENLACE DE 8 LINEAS ENTRE LAS DOS TARJETAS  --  BIDIRECCIONAL
+// Salida en modo transmisor, alta impedancia en modo receptor.
+// Las posiciones de header son las mismas en las dos tarjetas, asi que el
+// cable va derecho: J5-5..J5-12  ->  J5-5..J5-12.
+//
+// En la protoboard cada linea lleva su resistencia de pull-down de 10 kohm a
+// GND, para que no queden niveles indefinidos si se desconecta el cable o si
+// las dos tarjetas estan en modo receptor.
+//
+// RECOMENDADO: poner ademas 220 ohm en serie en cada linea. Si por error las
+// dos tarjetas quedan en modo transmisor, esa resistencia limita la corriente
+// de contencion y protege los pines de ambas FPGAs.
+// ===========================================================================
+IO_LOC  "enlace_io[0]" 25;                                          // J5-5  · posicion 1
+IO_PORT "enlace_io[0]" IO_TYPE=LVCMOS33 PULL_MODE=DOWN DRIVE=8;
+
+IO_LOC  "enlace_io[1]" 26;                                          // J5-6  · posicion 2
+IO_PORT "enlace_io[1]" IO_TYPE=LVCMOS33 PULL_MODE=DOWN DRIVE=8;
+
+IO_LOC  "enlace_io[2]" 27;                                          // J5-7  · posicion 3
+IO_PORT "enlace_io[2]" IO_TYPE=LVCMOS33 PULL_MODE=DOWN DRIVE=8;
+
+IO_LOC  "enlace_io[3]" 28;                                          // J5-8  · posicion 4
+IO_PORT "enlace_io[3]" IO_TYPE=LVCMOS33 PULL_MODE=DOWN DRIVE=8;
+
+IO_LOC  "enlace_io[4]" 29;                                          // J5-9  · posicion 5
+IO_PORT "enlace_io[4]" IO_TYPE=LVCMOS33 PULL_MODE=DOWN DRIVE=8;
+
+IO_LOC  "enlace_io[5]" 30;                                          // J5-10 · posicion 6
+IO_PORT "enlace_io[5]" IO_TYPE=LVCMOS33 PULL_MODE=DOWN DRIVE=8;
+
+IO_LOC  "enlace_io[6]" 33;                                          // J5-11 · posicion 7
+IO_PORT "enlace_io[6]" IO_TYPE=LVCMOS33 PULL_MODE=DOWN DRIVE=8;
+
+IO_LOC  "enlace_io[7]" 34;                                          // J5-12 · posicion 8 (DED)
+IO_PORT "enlace_io[7]" IO_TYPE=LVCMOS33 PULL_MODE=DOWN DRIVE=8;
+
+
+// ===========================================================================
+// CATODOS COMPARTIDOS POR LOS DOS DISPLAYS DE 7 SEGMENTOS
+// Activos en bajo, cada uno con su resistencia de 330 ohm.
+// Corriente por segmento: (3.3 - 0.2 - 2.0) / 330 = 3.3 mA  ->  cabe en
+// DRIVE=8 con holgura, porque cada pin maneja UN solo segmento.
+// ===========================================================================
+IO_LOC  "catodo_o[0]" 41;                                           // J5-15 · segmento a
+IO_PORT "catodo_o[0]" IO_TYPE=LVCMOS33 DRIVE=8;
+
+IO_LOC  "catodo_o[1]" 42;                                           // J5-16 · segmento b
+IO_PORT "catodo_o[1]" IO_TYPE=LVCMOS33 DRIVE=8;
+
+IO_LOC  "catodo_o[2]" 51;                                           // J5-17 · segmento c
+IO_PORT "catodo_o[2]" IO_TYPE=LVCMOS33 DRIVE=8;
+
+IO_LOC  "catodo_o[3]" 53;                                           // J5-18 · segmento d
+IO_PORT "catodo_o[3]" IO_TYPE=LVCMOS33 DRIVE=8;
+
+IO_LOC  "catodo_o[4]" 54;                                           // J5-19 · segmento e
+IO_PORT "catodo_o[4]" IO_TYPE=LVCMOS33 DRIVE=8;
+
+IO_LOC  "catodo_o[5]" 55;                                           // J5-20 · segmento f
+IO_PORT "catodo_o[5]" IO_TYPE=LVCMOS33 DRIVE=8;
+
+IO_LOC  "catodo_o[6]" 56;                                           // J5-21 · segmento g
+IO_PORT "catodo_o[6]" IO_TYPE=LVCMOS33 DRIVE=8;
+
+
+// ===========================================================================
+// BASES DE LOS TRANSISTORES PNP QUE ENCIENDEN CADA DISPLAY
+// Activas en bajo: 0 = ese display encendido.
+//
+// OJO CON LA RESISTENCIA DE BASE. Con los 220 ohm que dibuja la figura 3 del
+// enunciado, el pin tendria que DRENAR (3.3 - 0.7) / 220 = 11.8 mA, y el pin
+// solo aguanta 8 mA con DRIVE=8.
+//
+//   Solucion recomendada: usar 1 kohm en vez de 220 ohm.
+//     Ib = (3.3 - 0.7) / 1000 = 2.6 mA  ->  dentro de spec.
+//     Con 7 segmentos x 3.3 mA = 23 mA de corriente de emisor, una Ib de
+//     2.6 mA da beta forzada = 9, o sea el transistor satura de sobra.
+//
+//   Si insiste en dejar los 220 ohm: cambie estas dos lineas a DRIVE=16.
+// ===========================================================================
+// IMPORTANTE: estos dos pines TIENEN que estar en un banco de 3.3 V.
+// Los pines 77 y 76 (J6-10 y J6-11) NO sirven aqui: son IOT37A/IOT37B, que
+// pertenecen al BANK3 y en esta tarjeta ese banco esta a 1.8 V. Un pin de
+// 1.8 V no puede APAGAR un PNP cuyo emisor esta a 3.3 V, porque quedaria
+// Veb = 3.3 - 1.8 = 1.5 V > 0.7 V y el transistor conduciria siempre.
+// Se usan 49 (IOR24A, BANK1) y 31 (IOB15A, BANK2), los dos a 3.3 V, y ademas
+// quedan contiguos en el header.
+IO_LOC  "anodo_o[0]" 49;                                            // J6-20 · display de la palabra
+IO_PORT "anodo_o[0]" IO_TYPE=LVCMOS33 DRIVE=8;
+
+IO_LOC  "anodo_o[1]" 31;                                            // J6-21 · display del sindrome
+IO_PORT "anodo_o[1]" IO_TYPE=LVCMOS33 DRIVE=8;
+
+
+// ===========================================================================
+// SELECTORES DE POSICION DE ERROR  --  BANCO DE 1.8 V, ACTIVOS EN BAJO
+// Solo se usan en modo transmisor.
+//
+// ALAMBRADO: cada switch va del pin DIRECTO A GND. El pull-up interno de la
+// FPGA se encarga del nivel alto. NO se usa la resistencia de pull-down de la
+// figura 1 del enunciado.
+//
+//   switch abierto -> pin en 1 -> el top lo invierte -> bit = 0
+//   switch cerrado -> pin en 0 -> el top lo invierte -> bit = 1
+//   los tres abiertos = 000 = "no insertar error"  (valor de reposo)
+//
+// PELIGRO: estos seis pines son de 1.8 V. NUNCA conectarlos a 3.3 V ni a la
+// salida de un 74HC86. Solo el switch contra GND.
+// ===========================================================================
+IO_LOC  "err1_n_i[0]" 85;                                           // J6-3
+IO_PORT "err1_n_i[0]" IO_TYPE=LVCMOS18 PULL_MODE=UP;
+
+IO_LOC  "err1_n_i[1]" 84;                                           // J6-4
+IO_PORT "err1_n_i[1]" IO_TYPE=LVCMOS18 PULL_MODE=UP;
+
+IO_LOC  "err1_n_i[2]" 83;                                           // J6-5
+IO_PORT "err1_n_i[2]" IO_TYPE=LVCMOS18 PULL_MODE=UP;
+
+IO_LOC  "err2_n_i[0]" 82;                                           // J6-6
+IO_PORT "err2_n_i[0]" IO_TYPE=LVCMOS18 PULL_MODE=UP;
+
+IO_LOC  "err2_n_i[1]" 81;                                           // J6-7
+IO_PORT "err2_n_i[1]" IO_TYPE=LVCMOS18 PULL_MODE=UP;
+
+IO_LOC  "err2_n_i[2]" 80;                                           // J6-8
+IO_PORT "err2_n_i[2]" IO_TYPE=LVCMOS18 PULL_MODE=UP;
+
+
+// ===========================================================================
+// BOTON S1 DE LA PROPIA TARJETA  --  seleccion de display
+// Momentaneo y activo en bajo: mientras se mantiene presionado el display
+// muestra el sindrome; al soltarlo vuelve a mostrar la palabra.
+// No ocupa ningun pin de los headers.
+// ===========================================================================
+IO_LOC  "btn_disp_n_i" 3;                                           // S1
+IO_PORT "btn_disp_n_i" IO_TYPE=LVCMOS18 PULL_MODE=UP;
+
+
+// ===========================================================================
+// LEDs DE LA PROPIA TARJETA  --  banco de 1.8 V, ACTIVOS EN BAJO
+//   modo transmisor: led_o = palabra de 4 bits que se esta enviando
+//   modo receptor  : led_o = palabra de 4 bits ya CORREGIDA (SEC)
+//                    led_ded_o = aviso de doble error (DED)
+// Queda libre el LED del pin 16.
+// ===========================================================================
+IO_LOC  "led_o[0]" 10;
+IO_PORT "led_o[0]" IO_TYPE=LVCMOS18 DRIVE=8;
+
+IO_LOC  "led_o[1]" 11;
+IO_PORT "led_o[1]" IO_TYPE=LVCMOS18 DRIVE=8;
+
+IO_LOC  "led_o[2]" 13;
+IO_PORT "led_o[2]" IO_TYPE=LVCMOS18 DRIVE=8;
+
+IO_LOC  "led_o[3]" 14;
+IO_PORT "led_o[3]" IO_TYPE=LVCMOS18 DRIVE=8;
+
+IO_LOC  "led_ded_o" 15;
+IO_PORT "led_ded_o" IO_TYPE=LVCMOS18 DRIVE=8;
