@@ -2,15 +2,19 @@
 #
 #EL-3307 Diseno Logico - Proyecto corto I
 #
-#Un solo bitstream sirve para las dos tarjetas: el pin modo_i (J6-19) decide
-#si esa tarjeta se comporta como transmisor (jumper a GND) o como receptor
-#(sin jumper).
+#Un solo bitstream sirve para las dos tarjetas: el pin modo_i (J6-22) decide
+#si esa tarjeta se comporta como transmisor (jumper a J6-23, que es GND) o
+#como receptor (sin jumper).
 #
 #Uso:
 #  make            -> sintetiza, hace pnr, genera el bitstream y lo carga
 #  make synth      -> solo la sintesis
 #  make test       -> corre el testbench principal (tb_sistema_completo)
 #  make test-all   -> corre TODOS los testbenches, uno por uno
+#  make load       -> carga el bitstream en la SRAM (se pierde al desconectar)
+#  make load-flash -> lo graba en la flash, queda permanente
+#  make all-flash  -> todo el flujo, grabando en la flash
+#  make detect     -> comprueba que openFPGALoader vea la tarjeta
 #  make wv         -> abre la forma de onda en GTKWave
 #  make clean      -> borra los productos intermedios
 #
@@ -66,6 +70,9 @@ TESTBENCHES = tb_bin_a_7seg \
 
 all: synth pnr bitstream load
 
+#Igual que "make all" pero grabando en la flash en vez de la SRAM.
+all-flash: synth pnr bitstream load-flash
+
 # Synthesis
 synth: ${SOURCES}
 	@echo "Ejecutando la sintesis..."
@@ -108,14 +115,26 @@ run-%:
 wv:
 	gtkwave ${VCD_FILE}
 
-# Cargar el bitstream en la FPGA
+# Cargar el bitstream en la SRAM de la FPGA.
+# Es lo rapido para probar, pero se PIERDE al desconectar la tarjeta.
 load: ${PROYECT}_${BOARD}.fs
 	openFPGALoader -b ${BOARD} ${PROYECT}_${BOARD}.fs
+
+# Cargar el bitstream en la FLASH de la tarjeta.
+# Tarda mas, pero queda grabado: la tarjeta arranca con el diseno aunque la
+# desconecte. Use esto para la presentacion.
+load-flash: ${PROYECT}_${BOARD}.fs
+	openFPGALoader -b ${BOARD} -f ${PROYECT}_${BOARD}.fs
+
+# Listar lo que openFPGALoader ve conectado. Para diagnosticar cuando
+# "make load" dice que no encuentra el cable.
+detect:
+	openFPGALoader --detect
 
 #El guion inicial hace que make ignore el error si "rm" no existe (Windows).
 clean:
 	-@rm -f *.o *.json *.fs *.vcd *.log
 	@echo Limpio.
 
-.PHONY: load  wv test test-all clean
+.PHONY: all all-flash load load-flash detect wv test test-all clean
 .INTERMEDIATE: ${PROYECT}_pnr.json ${PROYECT}.json
