@@ -35,32 +35,77 @@ module module_bin_a_7seg (
     output logic [6:0] seg_o
 );
 
-    // Alias solo para lectura del codigo (no sintetizan nada extra)
+    // Entradas
     logic A, B, C, D;
+
     assign A = datos_i[3];
     assign B = datos_i[2];
     assign C = datos_i[1];
     assign D = datos_i[0];
 
-    // seg_o[0] = a  (activo en bajo)
-    assign seg_o[0] = (A & B & D & ~C) | (A & C & D & ~B) | (B & ~A & ~C & ~D) | (D & ~A & ~B & ~C);
 
-    // seg_o[1] = b  (activo en bajo)
-    assign seg_o[1] = (A & C & D) | (A & B & ~D) | (B & C & ~D) | (B & D & ~A & ~C);
+    // Display de 7 segmentos de CATODO COMUN
+    // 1 = segmento encendido
+    // 0 = segmento apagado
 
-    // seg_o[2] = c  (activo en bajo)
-    assign seg_o[2] = (A & B & C) | (A & B & ~D) | (C & ~A & ~B & ~D);
 
-    // seg_o[3] = d  (activo en bajo)
-    assign seg_o[3] = (B & C & D) | (A & C & ~B & ~D) | (B & ~A & ~C & ~D) | (D & ~A & ~B & ~C);
+    // seg_o[0] = a
+    assign seg_o[0] = ~(
+        (A & B & D & ~C) |
+        (A & C & D & ~B) |
+        (B & ~A & ~C & ~D) |
+        (D & ~A & ~B & ~C)
+    );
 
-    // seg_o[4] = e  (activo en bajo)
-    assign seg_o[4] = (D & ~A) | (B & ~A & ~C) | (D & ~B & ~C);
 
-    // seg_o[5] = f  (activo en bajo)
-    assign seg_o[5] = (C & D & ~A) | (C & ~A & ~B) | (D & ~A & ~B) | (A & B & D & ~C);
+    // seg_o[1] = b
+    assign seg_o[1] = ~(
+        (A & C & D) |
+        (A & B & ~D) |
+        (B & C & ~D) |
+        (B & D & ~A & ~C)
+    );
 
-    // seg_o[6] = g  (activo en bajo)
-    assign seg_o[6] = (B & C & D & ~A) | (~A & ~B & ~C) | (A & B & ~C & ~D);
+
+    // seg_o[2] = c
+    assign seg_o[2] = ~(
+        (A & B & C) |
+        (A & B & ~D) |
+        (C & ~A & ~B & ~D)
+    );
+
+
+    // seg_o[3] = d
+    assign seg_o[3] = ~(
+        (B & C & D) |
+        (A & C & ~B & ~D) |
+        (B & ~A & ~C & ~D) |
+        (D & ~A & ~B & ~C)
+    );
+
+
+    // seg_o[4] = e
+    assign seg_o[4] = ~(
+        (D & ~A) |
+        (B & ~A & ~C) |
+        (D & ~B & ~C)
+    );
+
+
+    // seg_o[5] = f
+    assign seg_o[5] = ~(
+        (C & D & ~A) |
+        (C & ~A & ~B) |
+        (D & ~A & ~B) |
+        (A & B & D & ~C)
+    );
+
+
+    // seg_o[6] = g
+    assign seg_o[6] = ~(
+        (B & C & D & ~A) |
+        (~A & ~B & ~C) |
+        (A & B & ~C & ~D)
+    );
 
 endmodule
